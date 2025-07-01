@@ -4,5 +4,11 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
   "editor.codeActions.triggerOnFocusChange": false,
-  "git.alwaysShowStagedChangesResourceGroup": true
+  "git.alwaysShowStagedChangesResourceGroup": true,
+
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+
+  "code-runner.executorMap": {
+    "python": "/usr/bin/python3"
+  }
 }
