@@ -1,0 +1,172 @@
+{
+  "map_name": "Classic",
+  "tiles": [
+    { "type": "start", "name": "Start" },
+    {
+      "type": "property",
+      "name": "Mediterranean Avenue",
+      "price": 60,
+      "rent": 2,
+      "set_id": "brown"
+    },
+    {
+      "type": "property",
+      "name": "Baltic Avenue",
+      "price": 60,
+      "rent": 4,
+      "set_id": "brown"
+    },
+    { "type": "income_tax", "name": "Income Tax", "tax_rate": 0.1 },
+    {
+      "type": "property",
+      "name": "Reading Railroad",
+      "price": 200,
+      "rent": 25,
+      "set_id": "railroad"
+    },
+    {
+      "type": "property",
+      "name": "Oriental Avenue",
+      "price": 100,
+      "rent": 6,
+      "set_id": "light_blue"
+    },
+    {
+      "type": "property",
+      "name": "Vermont Avenue",
+      "price": 100,
+      "rent": 6,
+      "set_id": "light_blue"
+    },
+    {
+      "type": "property",
+      "name": "Connecticut Avenue",
+      "price": 120,
+      "rent": 8,
+      "set_id": "light_blue"
+    },
+    { "type": "jail", "name": "Jail" },
+    {
+      "type": "property",
+      "name": "St. Charles Place",
+      "price": 140,
+      "rent": 10,
+      "set_id": "pink"
+    },
+    {
+      "type": "property",
+      "name": "States Avenue",
+      "price": 140,
+      "rent": 10,
+      "set_id": "pink"
+    },
+    {
+      "type": "property",
+      "name": "Virginia Avenue",
+      "price": 160,
+      "rent": 12,
+      "set_id": "pink"
+    },
+    { "type": "vacation", "name": "Vacation" },
+    {
+      "type": "property",
+      "name": "St. James Place",
+      "price": 180,
+      "rent": 14,
+      "set_id": "orange"
+    },
+    {
+      "type": "property",
+      "name": "Tennessee Avenue",
+      "price": 180,
+      "rent": 14,
+      "set_id": "orange"
+    },
+    {
+      "type": "property",
+      "name": "New York Avenue",
+      "price": 200,
+      "rent": 16,
+      "set_id": "orange"
+    },
+    { "type": "super_tax", "name": "Super Tax", "tax_amount": 50 },
+    {
+      "type": "property",
+      "name": "Kentucky Avenue",
+      "price": 220,
+      "rent": 18,
+      "set_id": "red"
+    },
+    {
+      "type": "property",
+      "name": "Indiana Avenue",
+      "price": 220,
+      "rent": 18,
+      "set_id": "red"
+    },
+    {
+      "type": "property",
+      "name": "Illinois Avenue",
+      "price": 240,
+      "rent": 20,
+      "set_id": "red"
+    },
+    {
+      "type": "property",
+      "name": "Atlantic Avenue",
+      "price": 260,
+      "rent": 22,
+      "set_id": "yellow"
+    },
+    {
+      "type": "property",
+      "name": "Ventnor Avenue",
+      "price": 260,
+      "rent": 22,
+      "set_id": "yellow"
+    },
+    {
+      "type": "property",
+      "name": "Marvin Gardens",
+      "price": 280,
+      "rent": 24,
+      "set_id": "yellow"
+    },
+    { "type": "go_to_jail", "name": "Go to Jail" },
+    {
+      "type": "property",
+      "name": "Pacific Avenue",
+      "price": 300,
+      "rent": 26,
+      "set_id": "green"
+    },
+    {
+      "type": "property",
+      "name": "North Carolina Avenue",
+      "price": 300,
+      "rent": 26,
+      "set_id": "green"
+    },
+    {
+      "type": "property",
+      "name": "Pennsylvania Avenue",
+      "price": 320,
+      "rent": 28,
+      "set_id": "green"
+    },
+    {
+      "type": "property",
+      "name": "Park Place",
+      "price": 350,
+      "rent": 35,
+      "set_id": "blue"
+    },
+    {
+      "type": "property",
+      "name": "Boardwalk",
+      "price": 400,
+      "rent": 50,
+      "set_id": "blue"
+    }
+  ]
+}

@@ -1,0 +1,347 @@
+# working on case 2 (sell) of get_order
+# todo on last section of main
+
+import uuid
+from typing import List, Dict
+from typing_extensions import override  # Use this if Python <3.12
+
+is_completed = False
+
+
+# ------------------ Core Classes ------------------
+
+
+class Person:
+    name: str
+    stocks: List[str]  # <stockName_lower>D<stock_volume>D<stock_price>
+    amount: float
+    net_worth: float
+    order: List[Dict[str, str | float | int]]
+    id: str
+
+    def __init__(self, entryName: str, entryAmount: float, player_id: str) -> None:
+        self.name = entryName
+        self.stocks = []
+        self.amount = entryAmount
+        self.net_worth = entryAmount
+        self.order = []
+        self.id = player_id
+
+    @override
+    def __str__(self) -> str:
+        return f"Person(name={self.name}, cash={self.amount:.2f}, net_worth={self.net_worth:.2f})"
+
+
+class Stock:
+    name: str
+    id: str
+    volume: int
+    capital: float
+    price: float
+    movement: Dict[str, int]
+    current_market: int
+
+    def __init__(
+        self,
+        listingName: str,
+        listingId: str,
+        listingVolume: int,
+        listingCapital: float,
+    ) -> None:
+        self.name = listingName
+        self.id = listingId
+        self.volume = listingVolume
+        self.capital = listingCapital
+        self.price = listingCapital / listingVolume if listingVolume > 0 else 0
+        self.movement = {"buys": 0, "sells": 0}
+        self.current_market = self.volume
+
+    @override
+    def __str__(self) -> str:
+        return f"Stock(name={self.name}, id={self.id}, price={self.price:.2f}, volume={self.volume}, capital={self.capital})"
+
+
+class Chat:
+    chat_counter: int = 1
+
+    chat_data: str
+    chat_time: str
+    id: int
+    writer: str
+
+    def __init__(self, context: str, timeStamp: str, writer: str) -> None:
+        self.chat_data = context
+        self.chat_time = timeStamp
+        self.id = Chat.chat_counter
+        Chat.chat_counter += 1
+        self.writer = writer
+
+
+class GameState:
+    people: List[Person]
+    market: List[Stock]
+    rounds: int
+    orderList: List[str]
+    current_round: int
+    logs: List[Dict[str, str | int]]
+
+    def __init__(self) -> None:
+        self.people = []
+        self.market = []
+        self.rounds = 0
+        self.current_round = 0
+        self.logs = []
+        self.orderList = []
+
+    def add_player(self, name: str, starting_cash: float) -> None:
+        player_id = uuid.uuid4().hex[:8]
+        player = Person(name, starting_cash, player_id)
+        self.people.append(player)
+        self.log_action("Player Registered", name, f"Starting cash: {starting_cash}")
+
+    def add_stock(self, name: str, volume: int, capital: float) -> None:
+        stock_id = uuid.uuid4().hex[:8]
+        stock = Stock(name, stock_id, volume, capital)
+        self.market.append(stock)
+        self.log_action(
+            "Stock Registered", name, f"Volume: {volume}, Capital: {capital}"
+        )
+
+    def log_action(self, action_type: str, actor: str, details: str) -> None:
+        entry: Dict[str, str | int] = {
+            "round": self.current_round,
+            "type": action_type,
+            "actor": actor,
+            "details": details,
+        }
+        self.logs.append(entry)
+        print(f"[LOG] Round {self.current_round} | {action_type} by {actor}: {details}")
+
+
+# ------------------ Input Helpers ------------------
+
+
+def get_int(
+    prompt: str, error_msg: str = "Invalid entry --> must be an integer"
+) -> int | None:
+    try:
+        return int(input(prompt))
+    except ValueError:
+        print(error_msg)
+        return None
+
+
+def get_float(
+    prompt: str, error_msg: str = "Invalid entry --> must be a float"
+) -> float | None:
+    try:
+        return float(input(prompt))
+    except ValueError:
+        print(error_msg)
+        return None
+
+
+# ------------------ Display ------------------
+
+
+def display_game_state(game: GameState) -> None:
+    print("\nCurrent Game State:")
+    print("Players:")
+    for p in game.people:
+        print(p)
+    print("\nStocks:")
+    for s in game.market:
+        print(s)
+
+
+# ------------ Game Functioning ------------
+
+
+# Order data and helpers
+# 1 -- encode_order(raw: dict, owner: str) -> Order
+# 2 -- validate_order(game: GameState, order: Order) -> tuple[bool, str | None]
+# 3 -- order_to_execution_key(order: Order) -> tuple
+def get_order(game: GameState, p: Person, choice: int, stock_name: str) -> str:
+    for s in game.market:
+        if s.name == stock_name:
+            match choice:
+                case 1:
+                    try:
+                        buy_volume = int(
+                            input(f"What volume of share:{s.name} you want : ")
+                        )
+                    except ValueError:
+                        return f"Value must be in integer .. order cancelled"
+                    if s.current_market > buy_volume:
+                        print("trade possible at current buy price")
+                        print(f"CURRENT PRICE --> : {s.price}")
+                        ask = input("agree : [y/n]")
+                        if ask == "y":
+                            game.orderList.append(
+                                f"BUY {p.name} {s.name} {buy_volume} {s.price}"
+                            )
+                            return f"order for BUY {p.name} {s.name} {buy_volume} {s.price} is placed"
+                        elif ask == "n":
+                            return f"order for BUY {p.name} {s.name} {buy_volume} {s.price} is cancelled"
+                        else:
+                            return f"wrong entry player {p.name}, order cancelled"
+                case 2:
+                    # wrong , you already asked for the share
+                    print("You hold ---->")
+                    i = 0
+                    for hold_shares in p.stocks:
+                        i += 1
+                        print(f"share of       : {hold_shares.split('D')[0]}")
+                        print(f"of volume      : {hold_shares.split('D')[1]}")
+                        print(f"of price       : {hold_shares.split('D')[2]}")
+                        print(f"Holding serial : {i}")
+                        ask = input("would you like to sell some of these [y/n]")
+
+
+# Collection & time control
+# 1 -- collect_orders_turnwise(game: GameState, round_no: int, timeout_s: int | None = None) -> None
+# 2 -- collect_single_player_orders(player: Person, timeout_s: int | None = None) -> List[Order]
+# 3 -- enforce_timeouts_and_collect_pending(game: GameState) -> None
+#
+#
+# Orderbook, registry & matching
+# 1 -- enqueue_order(game: GameState, order: Order) -> None
+# 2 -- match_orders_for_stock(game: GameState, stock_id: str) -> List[ExecutedTrade]
+# 3 -- resolve_conditional_orders(game: GameState, stock_id: str, price_snapshot: float) -> List[Order]
+# 4 -- aggregate_net_movements(stock: Stock, executed_trades: List[ExecutedTrade]) -> float
+#
+#
+# Execution, settlement & shortfall handling
+# 1 -- execute_trades(game: GameState, executed_trades: List[ExecutedTrade]) -> None
+# 2 -- request_bids_for_shortfall(game: GameState, buyer: Person, stock: Stock, shortfall_qty: int, reference_price: float) -> List[Bid]
+# 3 -- compute_and_apply_spread(game: GameState, stock: Stock, trades: List[ExecutedTrade], bids: List[Bid]) -> None
+#
+#
+# Price update, conditionals and options
+# 1 -- update_stock_price(stock: Stock, net_movement: float, total_shares: int) -> float
+# 2 -- recheck_conditionals_after_price_update(game: GameState, stock_id: str) -> None
+# 3 -- assign_new_calls_and_puts(game: GameState) -> None
+#
+#
+# Round control, logging, snapshots, endgame
+# 1 -- advance_round(game: GameState) -> None
+# 2 -- log_action(game: GameState, action_type: str, actor: str, details: str) -> None
+# 3 -- snapshot_state(game: GameState) -> dict
+# 4 -- evaluate_winner(game: GameState) -> List[tuple[Person, float]]
+#
+#
+# Bots, strategies & utilities
+# 1 -- simulate_bot_actions(game: GameState, bot: Person, round_no: int) -> List[Order]
+# 2 -- util_safe_div(a: float, b: float, default: float = 0.0) -> float
+# 3 -- util_generate_id(prefix: str = "") -> str
+
+
+# ------------------ Main ------------------
+
+
+def main() -> None:
+    global is_completed
+    game = GameState()
+
+    N = get_int("How many players do you want to add: ")
+    if N is None or N <= 0:
+        return
+
+    starting_cash = get_float("How much should each player start with: ")
+    if starting_cash is None or starting_cash <= 0:
+        return
+
+    print("\nRegistering players...")
+    for i in range(N):
+        name = input(f"Enter name for player {i + 1}: ")
+        game.add_player(name, starting_cash)
+    print("Player registration complete.\n")
+
+    S = get_int("How many stocks do you want to add: ")
+    if S is None or S <= 0:
+        return
+
+    print("\nRegistering stocks...")
+    for i in range(S):
+        name = input(f"Name of Stock {i + 1}: ")
+        volume = get_int(
+            "Number of shares for the stock: ",
+            "Invalid entry --> Volume must be a positive integer",
+        )
+        capital = get_float(
+            "Total capital for the stock: ",
+            "Invalid entry --> Capital must be a positive float",
+        )
+        if volume is not None and capital is not None and volume > 0 and capital > 0:
+            game.add_stock(name, volume, capital)
+        else:
+            print("Stock registration failed\n")
+
+    rounds = get_int(
+        "How many rounds should the game have: ", "Rounds should be greater than 1"
+    )
+    if rounds is None or rounds <= 0:
+        return
+    game.rounds = rounds
+
+    print("\nAll initializations completed. Ready for simulation.")
+    display_game_state(game)
+
+    # lets strat the game
+    print(" L-E-T-'S--S-T-A-R-T")
+    print("ROUND - 0")
+    working_round = 0
+    while is_completed is False:
+        print("Game stats")
+        display_game_state(game)
+        print("\ngathering orders")
+        for p in game.people:
+            while True:
+                print(f"getting order for {p.name}")
+                print("""1 -- buy
+                    2 -- sell
+                    3 -- get calls
+                    4 -- get puts""")
+                try:
+                    choice = int(input("Enter choice :  "))
+                except ValueError:
+                    print("Please enter an integer")
+                    print("order cancelled")
+                    continue
+                if choice < 1 or choice > 4:
+                    print("Please enter an integer between 1 and 4")
+                    print("order cancelled")
+                    continue
+                print("For which stock would you like the order :  ")
+                for s in game.market:
+                    print(s)
+                name = input("Enter stock name , if failed order will be cancelled :  ")
+                status = get_order(game, p, choice, name)
+                print(status)
+                try:
+                    ask = int(
+                        input(
+                            "Press any number to end ordering, or any letter to continue: "
+                        )
+                    )
+                    print("\n\n\n\n")
+                    break
+                except ValueError:
+                    continue
+        print("\n\n-- order gthering completed --\n\n")
+        # 1  -- list all order
+        # 2  -- complete affirmative orders --------------------------------- remove them from list ----
+        # 3  -- announce completions for each player ------------------------ in chat ----
+        # 4  -- change net movements while doing orders --------------------- update share property in and out ---
+        # 5  -- convert possible conditional orders to affirmative ---------- do-able orders to confirm ---
+        # 6  -- update prices ----------------------------------------------- update prices on current moves ---
+        # 7  -- check conditional chances, if possible to confirm ----------- do as step 5 again for new prices ---
+        # 8  -- deliver new calls and puts ---------------------------------- assign new calls and puts at the premium ---
+        # 9  -- update all calls and puts , ready for next round ------------ get calls and puts ready for next round ---
+        # 10 -- update prices ----------------------------------------------- update prices on current moves ---
+        # 11 -- announce all completed processes and announce them ---------- all logged and ready ---
+        # 12 -- ready for new round / check if completed --> announce winner  check completion (yes or now) or next round
+
+
+if __name__ == "__main__":
+    main()
