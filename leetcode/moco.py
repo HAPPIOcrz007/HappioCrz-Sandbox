@@ -290,19 +290,15 @@ def get_float(
 
 
 def display_game_state(game: GameState) -> None:
-    """
-    Displays the current game state.
-
-    Args:
-        game (GameState): The current game state.
-    """
     print("\nCurrent Game State:")
     print("Players:")
     for p in game.people:
         print(p)
     print("\nStocks:")
     for s in game.market:
-        print(s)
+        print(
+            f"{s.name} | Price: ₹{s.price:.2f} | Total Volume: {s.volume} | Available in Market: {s.current_market} | Capital: ₹{s.capital:.2f}"
+        )
 
 
 # ------------ Game Functioning ------------
@@ -330,26 +326,34 @@ def get_order(game: GameState, p: Person, choice: int, stock_name: str) -> str:
                             input(f"What volume of share:{s.name} you want : ")
                         )
                     except ValueError:
-                        return "Value must be in integer .. order cancelled"
-                    if s.current_market >= buy_volume:
-                        print("Trade possible at current buy price")
-                        print(f"CURRENT PRICE --> : {s.price}")
-                        ask = input("Agree? [y/n]: ")
-                        if ask.lower() == "y":
-                            game.orderList.append(
-                                f"BUY {p.name} {s.name.upper()} {buy_volume} {s.price}"
-                            )
-                            return (
-                                f"Order for BUY {p.name} {s.name} {buy_volume} {s.price} is"
-                                " placed"
-                            )
-                        elif ask.lower() == "n":
-                            return (
-                                f"Order for BUY {p.name} {s.name} {buy_volume} {s.price} is"
-                                " cancelled"
-                            )
-                        else:
-                            return f"Wrong entry by player {p.name}, order cancelled"
+                        return "Value must be an integer. Order cancelled."
+
+                    max_affordable = int(p.amount // s.price)
+                    max_possible = min(s.current_market, max_affordable, buy_volume)
+
+                    if max_possible == 0:
+                        return f"Cannot place order: insufficient funds or no shares available in market."
+
+                    print(
+                        f"Trade possible for up to {max_possible} shares at current price ₹{s.price:.2f}"
+                    )
+                    if max_possible < buy_volume:
+                        print(
+                            f"Note: You requested {buy_volume}, but only {max_possible} can be fulfilled now."
+                        )
+
+                    ask = input(
+                        f"Do you want to place a BUY order for {max_possible} shares at ₹{s.price:.2f}? [y/n]: "
+                    )
+                    if ask.lower() == "y":
+                        game.orderList.append(
+                            f"BUY {p.name} {s.name.upper()} {max_possible} {s.price}"
+                        )
+                        return f"Order for BUY {p.name} {s.name} {max_possible} at ₹{s.price:.2f} placed."
+                    elif ask.lower() == "n":
+                        return f"Order for BUY {p.name} {s.name} cancelled."
+                    else:
+                        return f"Invalid response. Order cancelled."
 
                 case 2:
                     holdings = []
@@ -795,6 +799,23 @@ def check_completion_or_advance(game: GameState) -> None:
         )
 
 
+def recalculate_market_volumes(game: GameState) -> None:
+    """
+    Recalculates current_market for each stock based on total volume minus player holdings.
+    """
+    for stock in game.market:
+        held_volume = 0
+        for p in game.people:
+            for h in p.stocks:
+                try:
+                    name, vol, _ = h.split("D")
+                    if name.lower() == stock.name.lower():
+                        held_volume += int(vol)
+                except:
+                    continue
+        stock.current_market = stock.volume - held_volume
+
+
 # ------------------ Main ------------------
 
 
@@ -918,6 +939,7 @@ def main() -> None:
         update_options(game)
         # [ ] 10 -- update prices ----------------------------------------------- update prices on current moves ---\
         update_stocks(game)
+        recalculate_market_volumes(game)
         # [X] 11 -- announce all completed processes and announce them ---------- all logged and ready ---\
         # [ ] 12 -- ready for new round / check if completed --> announce winner  check completion (yes or now) or next round
         check_completion_or_advance(game)

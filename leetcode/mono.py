@@ -339,69 +339,245 @@ def complete_order(game: GameState) -> None:
 
     for order in game.orderList:
         parts = order.split()
-        if len(parts) < 5:
-            continue  # skip malformed orders
-
-        order_type = parts[0]
-        player_name = parts[1]
-        stock_name = parts[2]
-        volume = int(parts[3])
-        price = float(parts[4])
-
-        stock = next(
-            (s for s in game.market if s.name.lower() == stock_name.lower()), None
-        )
-        person = next((p for p in game.people if p.name == player_name), None)
-
-        if not stock or not person:
+        if not parts:
             continue
 
-        if order_type == "BUY":
-            total_cost = volume * price
-            if person.amount >= total_cost and stock.current_market >= volume:
-                person.amount -= total_cost
-                stock.current_market -= volume
-                stock.movement["buys"] += total_cost
-                person.stocks.append(f"{stock.name.lower()}D{volume}D{price}")
-                game.log_action(
-                    "BUY Executed", person.name, f"{volume} of {stock.name} at {price}"
-                )
-                announce_trade(
-                    game, person.name, f"Bought {volume} of {stock.name} at {price}"
-                )
-                completed_orders.append(order)
+        order_type = parts[0]
 
-        elif order_type == "SELL":
-            for i, h in enumerate(person.stocks):
-                parts = h.split("D")
-                if len(parts) != 3:
-                    continue
-                name, held_vol, held_price = parts
-                if name == stock.name.lower() and int(held_vol) >= volume:
-                    revenue = volume * price
-                    person.amount += revenue
-                    stock.current_market += volume
-                    stock.movement["sells"] += revenue
+        # Only handle BUY/SELL here
+        if order_type in ["BUY", "SELL"]:
+            if len(parts) < 5:
+                continue
 
-                    remaining = int(held_vol) - volume
-                    if remaining > 0:
-                        person.stocks[i] = f"{name}D{remaining}D{held_price}"
-                    else:
-                        person.stocks.pop(i)
+            player_name = parts[1]
+            stock_name = parts[2]
+            volume = int(parts[3])  # safe now
+            price = float(parts[4])
 
+            stock = next(
+                (s for s in game.market if s.name.lower() == stock_name.lower()), None
+            )
+            person = next((p for p in game.people if p.name == player_name), None)
+
+            if not stock or not person:
+                continue
+
+            if order_type == "BUY":
+                total_cost = volume * price
+                if person.amount >= total_cost and stock.current_market >= volume:
+                    person.amount -= total_cost
+                    stock.current_market -= volume
+                    stock.movement["buys"] += total_cost
+                    person.stocks.append(f"{stock.name.lower()}D{volume}D{price}")
                     game.log_action(
-                        "SELL Executed",
+                        "BUY Executed",
                         person.name,
                         f"{volume} of {stock.name} at {price}",
                     )
                     announce_trade(
-                        game, person.name, f"Sold {volume} of {stock.name} at {price}"
+                        game, person.name, f"Bought {volume} of {stock.name} at {price}"
                     )
                     completed_orders.append(order)
-                    break
+
+            elif order_type == "SELL":
+                for i, h in enumerate(person.stocks):
+                    parts = h.split("D")
+                    if len(parts) != 3:
+                        continue
+                    name, held_vol, held_price = parts
+                    if name == stock.name.lower() and int(held_vol) >= volume:
+                        revenue = volume * price
+                        person.amount += revenue
+                        stock.current_market += volume
+                        stock.movement["sells"] += revenue
+
+                        remaining = int(held_vol) - volume
+                        if remaining > 0:
+                            person.stocks[i] = f"{name}D{remaining}D{held_price}"
+                        else:
+                            person.stocks.pop(i)
+
+                        game.log_action(
+                            "SELL Executed",
+                            person.name,
+                            f"{volume} of {stock.name} at {price}",
+                        )
+                        announce_trade(
+                            game,
+                            person.name,
+                            f"Sold {volume} of {stock.name} at {price}",
+                        )
+                        completed_orders.append(order)
+                        break
+
+        # Skip CALL/PUT here (they are handled in update_options)
+        else:
+            continue
 
     for order in completed_orders:
         game.orderList.remove(order)
+
+
+def convert_orders(game: GameState) -> None:
+    converted = []
+
+    for order in game.orderList:
+        parts = order.split()
+        if len(parts) != 7 or parts[0] != "COND":
+            continue  # skip non-conditional or malformed orders
+
+        (
+            _,
+            player_name,
+            stock_name,
+            cond_type,
+            direction,
+            volume_str,
+            trigger_price_str,
+        ) = parts
+        volume = int(volume_str)
+        trigger_price = float(trigger_price_str)
+
+        stock = next(
+            (s for s in game.market if s.name.lower() == stock_name.lower()), None
+        )
+        if not stock:
+            continue
+
+        current_price = stock.price
+        condition_met = (direction == "LESS" and current_price < trigger_price) or (
+            direction == "GREATER" and current_price > trigger_price
+        )
+
+        if condition_met:
+            new_order = (
+                f"{cond_type} {player_name} {stock.name} {volume} {current_price}"
+            )
+            converted.append((order, new_order))
+            game.log_action(
+                "Conditional Triggered",
+                player_name,
+                f"{cond_type} {stock.name} at {current_price} (trigger: {trigger_price})",
+            )
+
+    # Replace triggered conditionals with affirmative orders
+    for old, new in converted:
+        game.orderList.remove(old)
+        game.orderList.append(new)
+
+
+def update_stocks(game: GameState) -> None:
+    for stock in game.market:
+        total_volume = stock.volume
+        if total_volume <= 0:
+            continue  # avoid division by zero
+
+        net_movement = stock.movement["buys"] - stock.movement["sells"]
+        delta = net_movement / total_volume
+        old_price = stock.price
+        stock.price = round(old_price + delta, 2)
+
+        game.log_action(
+            "Price Updated",
+            stock.name,
+            f"Old: {old_price:.2f}, New: {stock.price:.2f}, Δ: {delta:.4f}",
+        )
+
+        # Reset movement for next round
+        stock.movement["buys"] = 0
+        stock.movement["sells"] = 0
+
+
+def update_options(game: GameState) -> None:
+    expired = []
+
+    for order in game.orderList:
+        parts = order.split()
+        if len(parts) != 6 or parts[0] not in ["CALL", "PUT"]:
+            continue  # skip non-option orders
+
+        order_type = parts[0]
+        player_name = parts[1]
+        stock_name = parts[2]
+        strike_price = float(parts[3])
+        premium = float(parts[4])
+        expiry = int(parts[5])
+
+        person = next((p for p in game.people if p.name == player_name), None)
+        if not person:
+            continue
+
+        # Charge premium
+        if person.amount >= premium:
+            person.amount -= premium
+            game.log_action(
+                "Premium Charged",
+                person.name,
+                f"{order_type} {stock_name} | Premium: {premium}",
+            )
+        else:
+            game.log_action(
+                "Premium Skipped",
+                person.name,
+                f"Insufficient funds for {order_type} {stock_name}",
+            )
+
+        # Decrement expiry
+        expiry -= 1
+        if expiry <= 0:
+            expired.append(order)
+            game.log_action(
+                "Option Expired",
+                person.name,
+                f"{order_type} {stock_name} at strike {strike_price}",
+            )
+        else:
+            # Replace with updated expiry
+            updated_order = f"{order_type} {player_name} {stock_name} {strike_price} {premium} {expiry}"
+            game.orderList[game.orderList.index(order)] = updated_order
+
+    # Remove expired options
+    for order in expired:
+        game.orderList.remove(order)
+
+
+def update_net_worths(game: GameState) -> None:
+    for p in game.people:
+        stock_value = 0
+        for h in p.stocks:
+            try:
+                name, vol, _ = h.split("D")
+                stock = next((s for s in game.market if s.name.lower() == name), None)
+                if stock:
+                    stock_value += int(vol) * stock.price
+            except:
+                continue
+        p.net_worth = p.amount + stock_value
+
+
+def check_completion_or_advance(game: GameState) -> None:
+    if game.current_round >= game.rounds:
+        print("\n🏁 Game Over! Calculating final standings...\n")
+        update_net_worths(game)
+        rankings = sorted(game.people, key=lambda p: p.net_worth, reverse=True)
+
+        print("🏆 Final Rankings:")
+        for i, p in enumerate(rankings, start=1):
+            print(
+                f"{i}. {p.name} — Net Worth: ₹{p.net_worth:.2f} (Cash: ₹{p.amount:.2f})"
+            )
+
+        winner = rankings[0]
+        print(f"\n🎉 Winner: {winner.name} with ₹{winner.net_worth:.2f} net worth!")
+        game.log_action(
+            "Game Completed", winner.name, f"Won with ₹{winner.net_worth:.2f}"
+        )
+        global is_completed
+        is_completed = True
+    else:
+        print(
+            f"\n✅ Round {game.current_round} completed. Preparing for Round {game.current_round + 1}...\n"
+        )
 
 
 # ------------------ Main ------------------
@@ -508,21 +684,23 @@ def main() -> None:
         complete_order(game)
         # [X] 3  -- announce completions for each player ------------------------ in chat ----
         # [X] 4  -- change net movements while doing orders --------------------- update share property in and out ---
-        # [ ] 5  -- convert possible conditional orders to affirmative ---------- do-able orders to confirm ---
-
-        # [ ] 6  -- update prices ----------------------------------------------- update prices on current moves ---
-        # [ ] 7  -- check conditional chances, if possible to confirm ----------- do as step 5 again for new prices ---
-        # [ ] 8  -- deliver new calls and puts ---------------------------------- assign new calls and puts at the premium ---
-        # [ ] 9  -- update all calls and puts , ready for next round ------------ get calls and puts ready for next round ---
+        # [X] 5  -- convert possible conditional orders to affirmative ---------- do-able orders to confirm ---
+        convert_orders(game)
+        complete_order(game)
+        # [X] 6  -- update prices ----------------------------------------------- update prices on current moves ---
+        update_stocks(game)
+        # [X] 7  -- check conditional chances, if possible to confirm ----------- do as step 5 again for new prices ---
+        convert_orders(game)
+        complete_order(game)
+        # [X] 8  -- deliver new calls and puts ---------------------------------- assign new calls and puts at the premium ---
+        # [X] 9  -- update all calls and puts , ready for next round ------------ get calls and puts ready for next round ---
+        update_options(game)
         # [ ] 10 -- update prices ----------------------------------------------- update prices on current moves ---
-        # [ ] 11 -- announce all completed processes and announce them ---------- all logged and ready ---
+        update_stocks(game)
+        # [X] 11 -- announce all completed processes and announce them ---------- all logged and ready ---
         # [ ] 12 -- ready for new round / check if completed --> announce winner  check completion (yes or now) or next round
-
+        check_completion_or_advance(game)
         game.current_round += 1
-        if game.current_round >= game.rounds:
-            is_completed = True
-            print("Game completed.")
-            # evaluate_winner(game)  # You can implement this next
 
 
 if __name__ == "__main__":
