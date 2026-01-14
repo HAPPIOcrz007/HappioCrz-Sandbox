@@ -1,11 +1,9 @@
 import streamlit as sl
-import os
-from re import search
-    
+import os    
 sl.set_page_config(page_title="File Compilation", layout="wide")
 sl.title("📁 File Compiler 📁")
-
 sl.header("Primary Data")
+
 one, two = sl.columns(2)
 with one:    
     sl.text_input("Product Name",key="product")
@@ -50,20 +48,37 @@ else:
         with col_b:
             sl.text_input("Enter tags to search for in file seperated by commas",key="search")
         
+        search = sl.session_state["search"].strip()
+        name_search = sl.session_state["name_search"].strip()
+        
+        search_patterns = [p.strip() for p in search.split(",") if p.strip()]
+        name_patterns = [n.strip() for n in name_search.split(",") if n.strip()]
+        
         for file in files:
-            for pattern in sl.session_state["search"].split(","):
-                if (pattern + "." in file) or (pattern + "_" in file):
-                    if sl.checkbox(file,key=file):
-                        selected.append(file)
-                    break                
-            if sl.session_state["name_search"]:  
-                for name in sl.session_state["name_search"].split(","):
-                    if name in file:
-                        if sl.checkbox(file,key=file):
-                            if file not in selected : selected.append(file)
-                        break   
+            show_file = False
+        
 
-    sl.write("Files Selected:",selected)
+            if not search_patterns and not name_patterns:
+                show_file = True
+        
+            # search patterns
+            for pattern in search_patterns:
+                if pattern + "." in file or pattern + "_" in file:
+                    show_file = True
+                    break
+        
+            # name
+            for name in name_patterns:
+                if name in file:
+                    show_file = True
+                    break
+        
+            # Create checkbox 
+            if show_file:
+                if sl.checkbox(file, key=file):
+                    selected.append(file) 
+        
+sl.write("Files Selected:",selected)
 sl.markdown("---")
 sl.header("Secondary Data")
 with sl.expander("Show Details"):
