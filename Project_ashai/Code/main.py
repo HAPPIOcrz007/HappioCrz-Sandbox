@@ -8,10 +8,21 @@ import streamlit as sl
 LASTFORM_NAME = "formLast.json"
 BASE_DIRECTORY = "home"
 OUT_DIRECTORY = "downloads"
-CHECKED_FILE_NAME = "checkbox.json"
 FILES_MOVED = 3
 
 # # # # # # # # # # # # # # # # # # #
+
+
+if "selected" not in sl.session_state:
+    sl.session_state["selected"] = []
+if "reset" not in sl.session_state:
+    sl.session_state["reset"] = False
+
+
+def clear_selected():
+    sl.session_state["selected"] = []
+    sl.session_state["file_selector"] = []
+    sl.session_state["reset"] = False
 
 
 def read_asc_file(filepath):
@@ -62,16 +73,8 @@ def processing_script(input_dir: str, output_dir: str):
     with open(LASTFORM_NAME, "r") as f:
         form_data = json.load(f)
 
-    # Load selected files
-    with open(CHECKED_FILE_NAME, "r") as f:
-        checked_files = json.load(f)
-
-    if len(checked_files) != 3:
-        raise ValueError("Exactly 3 files must be selected in checkbox.json")
-
     # Read ASC files
-    paths = [os.path.join(input_dir, f) for f in checked_files]
-    df1, df2, df3 = [read_asc_file(p) for p in paths]
+    df1, df2, df3 = [read_asc_file(p) for p in sl.session_state["selected"]]
 
     # Build numeric table
     combined = pd.DataFrame()
@@ -102,8 +105,6 @@ def processing_script(input_dir: str, output_dir: str):
 
     print(f"✅ Output saved to {output_file}")
 
-
-# # # # # # # # # # # # # # # # # # #
 
 # load existing JSON
 try:
@@ -148,7 +149,7 @@ if data is None:
         f"{lastForm_data['Thickness']}mm_{lastForm_data['Additional_Details']}.txt"
     )
     lastForm_data["Coating_Name"] = (
-        f"{int(lastForm_data['NFRC_id']) + 1}_{lastForm_data['Product_Name']}_"
+        f"{int(lastForm_data['NFRC_id'])}_{lastForm_data['Product_Name']}_"
         f"{lastForm_data['Thickness']}mm_{lastForm_data['Additional_Details']}.txt"
     )
 
@@ -157,7 +158,7 @@ if data is None:
 
     print("default data added successfully")
 
-# # # # # # # # # # # # # # # # # # #
+
 with open(LASTFORM_NAME, "r") as lastForm:
     data = json.load(lastForm)
 
@@ -180,27 +181,27 @@ sl.number_input(
     value=data.get("Emissivity_back", 0.000),
 )
 sl.text_input("Appearence", key="appearence", value=data.get("Appearance", ""))
-nfrcID = int(data.get("NFRC_id", 1)) + 1
+
 sl.markdown("---")
-sl.number_input(
-    "NFRC id",
-    key="nfrc_id",
-    min_value=0,
-    step=1,
-    value=nfrcID,
-)
-nfrcID = sl.session_state["nfrc_id"]
-full_Product_Name = f"{nfrcID}_{sl.session_state['product']}_{sl.session_state['thickness']}mm_{sl.session_state['details']}"
+
+nfrc = data.get("NFRC_id", 1)
+print(data["NFRC_id"])
+with sl.sidebar:
+    nfrc = sl.number_input("NFRC id", min_value=0, step=1, value=nfrc)
+sl.write("NFRC ID:", nfrc)
+full_Product_Name = f"{nfrc}_{sl.session_state['product']}_{sl.session_state['thickness']}mm_{sl.session_state['details']}"
+
+
 sl.text_input(
     "Substrate Filename", key="filename", value=data.get("Substrate_filename", "")
 )
-sl.text_input(
-    "Product Name",
-    key="f_p_name",
-    value=f"{full_Product_Name}",
-)
+# sl.text_input(
+#     "Product Name",
+#     key="f_p_name",
+#     value=f"{full_Product_Name}",
+# )
 sl.markdown("---")
-# # # # # # # # # # # # # # # # # # ## # # # # # # # # # # # # # # # # # #
+
 # Getting Files from the Directory
 
 sl.text_input("Enter a Valid Directory", key="dir", value=data.get("Directory"))
@@ -212,7 +213,6 @@ if not (directory):
     pass
 elif not (os.path.isdir(directory)):
     sl.error(f"Please enter a valid directory. {directory} does not exist!")
-    # directory = os.getcwd()
 else:
     files = [
         file
@@ -220,87 +220,73 @@ else:
         if os.path.isfile(os.path.join(directory, file))
     ]
 
-    with sl.expander("Files"):
-        selected = []
+    with sl.expander("📄 Files 📄"):
+        if not sl.session_state["reset"]:  # only render when not resetting
+            col_a, col_b = sl.columns(2)
 
-        col_a, col_b = sl.columns(2)
+            with col_a:
+                sl.text_input(
+                    "Enter File Name to search for in file seperated by commas",
+                    key="name_search",
+                )
+            with col_b:
+                sl.text_input(
+                    "Enter tags to search for in file seperated by commas", key="search"
+                )
 
-        with col_a:
-            sl.text_input(
-                "Enter File Name to search for in file seperated by commas",
-                key="name_search",
-            )
-        with col_b:
-            sl.text_input(
-                "Enter tags to search for in file seperated by commas", key="search"
-            )
+            search = sl.session_state["search"].strip()
+            name_search = sl.session_state["name_search"].strip()
 
-        search = sl.session_state["search"].strip()
-        name_search = sl.session_state["name_search"].strip()
+            search_patterns = [p.strip() for p in search.split(",") if p.strip()]
+            name_patterns = [n.strip() for n in name_search.split(",") if n.strip()]
 
-        search_patterns = [p.strip() for p in search.split(",") if p.strip()]
-        name_patterns = [n.strip() for n in name_search.split(",") if n.strip()]
-
-        try:
-            with open(CHECKED_FILE_NAME, "r") as f:
-                checked_files = json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            checked_files = []  # Show already checked files with numbering
-
-        for file in files:
-            show_file = False
-
-            if file in checked_files:
-                show_file = True
-
-            if show_file:
-                if sl.checkbox(file, key=f"{file}_checked", value=True):
-                    print(f"{file} is already checked")
-                else:
-                    checked_files.remove(file)
-                    print(f"{file} is removed from checked")
-                    with open(CHECKED_FILE_NAME, "w") as f:
-                        json.dump(checked_files, f, indent=4)
-        for file in files:
-            show_file = False
-
-            if not search_patterns and not name_patterns:
-                show_file = True
-
-            for pattern in search_patterns:
-                if (
-                    pattern + "." in file
-                    or pattern + "_" in file
-                    or "_" + pattern in file
-                    or "." + pattern in file
-                ):
-                    show_file = True
-                    break
-
-            for name in name_patterns:
-                if name in file:
-                    show_file = True
-                    break
-
-            if file in checked_files:
+            temp_list = []
+            for file in files:
                 show_file = False
 
-            if show_file:
-                if sl.checkbox(file, key=f"{file}_filter"):
-                    checked_files.append(file)
-                    print(f"{file} is checked")
-                    with open(CHECKED_FILE_NAME, "w") as f:
-                        json.dump(checked_files, f, indent=4)
+                if not search_patterns and not name_patterns:
+                    show_file = True
 
-try:
-    with open(CHECKED_FILE_NAME, "r") as f:
-        checked_files = json.load(f)
-except (json.JSONDecodeError, FileNotFoundError):
-    checked_files = []
+                # search patterns
+                for pattern in search_patterns:
+                    if pattern + "." in file or pattern + "_" in file:
+                        show_file = True
+                        break
 
-sl.write("Files Selected:", checked_files)
+                # name
+                for name in name_patterns:
+                    if name in file:
+                        show_file = True
+                        break
 
-sl.text_input("Enter a Valid Directory", key="out_dir", value=data.get("Out_Directory"))
+                if show_file and len(sl.session_state["selected"]) <= 3:
+                    temp_list.append(file)
+
+            temp_list = sl.multiselect(
+                "Choose files", temp_list, default=[], key="file_selector"
+            )
+            if temp_list:
+                if sl.button("Save Files?"):
+                    if len(temp_list) + len(sl.session_state["selected"]) < 4:
+                        for element in temp_list:
+                            if (
+                                os.path.join(directory, element)
+                                not in sl.session_state["selected"]
+                            ):
+                                sl.session_state["selected"].append(
+                                    os.path.join(directory, element)
+                                )
+                    else:
+                        sl.error("Cannot Select More than Three Files!")
+
+sl.write("Files Selected:", sl.session_state["selected"])
+
+
+sl.button("Clear Selected ", on_click=clear_selected)
+
+sl.text_input(
+    "Enter a Valid Output Directory", key="out_dir", value=data.get("Out_Directory")
+)
 
 output_directory = sl.session_state["out_dir"]
 sl.markdown("---")
@@ -351,42 +337,66 @@ with sl.expander("Show Details"):
         )
         sl.text_input("Appearence", key="appear", value=data.get("Appearance", "#"))
 
-################################
-if sl.button("💾 Save Data"):
-    final_form = {
-        "Wavelength": sl.session_state["wavelength"],
-        "Thickness": sl.session_state["thickness"],
-        "Conductivity": sl.session_state["conductivity"],
-        "IR_Transmittance": sl.session_state["tir"],
-        "Emissivity_front": sl.session_state["emissivity_front"],
-        "Emissivity_back": sl.session_state["emissivity"],
-        "Ef_Source": sl.session_state["efs"],
-        "Eb_Source": sl.session_state["ebs"],
-        "IGDB_Checksum": sl.session_state["igbd"],
-        "Product_Name": sl.session_state["product"],
-        "Full_Product_Name": (f"{full_Product_Name}.txt"),
-        "Additional_Details": sl.session_state["details"],
-        "Manufacturer": sl.session_state["manufacturer"],
-        "NFRC_id": sl.session_state["nfrc_id"],
-        "Type": sl.session_state["type"],
-        "Material": sl.session_state["material"],
-        "Coating_Name": sl.session_state["coating_name"],
-        "Coated_Side": sl.session_state["coated_side"],
-        "Substrate_filename": sl.session_state["filename"],
-        "Appearance": sl.session_state["appear"],
-        "Acceptance": sl.session_state["acceptance"],
-        "Uses": sl.session_state["uses"],
-        "Availability": sl.session_state["availibility"],
-        "Directory": sl.session_state["dir"],
-        "Out_Directory": sl.session_state["out_dir"],
-    }
+if os.path.exists(output_directory):
+    if sl.button("💾 Save Data"):
+        final_form = {
+            "Wavelength": sl.session_state["wavelength"],
+            "Thickness": sl.session_state["thickness"],
+            "Conductivity": sl.session_state["conductivity"],
+            "IR_Transmittance": sl.session_state["tir"],
+            "Emissivity_front": sl.session_state["emissivity_front"],
+            "Emissivity_back": sl.session_state["emissivity"],
+            "Ef_Source": sl.session_state["efs"],
+            "Eb_Source": sl.session_state["ebs"],
+            "IGDB_Checksum": sl.session_state["igbd"],
+            "Product_Name": sl.session_state["product"],
+            "Full_Product_Name": (f"{full_Product_Name}.txt"),
+            "Additional_Details": sl.session_state["details"],
+            "Manufacturer": sl.session_state["manufacturer"],
+            "NFRC_id": nfrc,
+            "Type": sl.session_state["type"],
+            "Material": sl.session_state["material"],
+            "Coating_Name": sl.session_state["coating_name"],
+            "Coated_Side": sl.session_state["coated_side"],
+            "Substrate_filename": sl.session_state["filename"],
+            "Appearance": sl.session_state["appear"],
+            "Acceptance": sl.session_state["acceptance"],
+            "Uses": sl.session_state["uses"],
+            "Availability": sl.session_state["availibility"],
+            "Directory": sl.session_state["dir"],
+            "Out_Directory": sl.session_state["out_dir"],
+        }
 
-    # Build formatted product name
-    final_form["Full_Product_Name"] = f"{full_Product_Name}.txt"
+        # Build formatted product name
+        final_form["Full_Product_Name"] = f"{full_Product_Name}.txt"
 
-    # Save back to JSON
-    with open(LASTFORM_NAME, "w") as f:
-        json.dump(final_form, f, indent=4)
+        # Save back to JSON
+        with open(LASTFORM_NAME, "w") as f:
+            json.dump(final_form, f, indent=4)
 
-    sl.success("✅ Data saved successfully!")
-    processing_script(sl.session_state["dir"], sl.session_state["out_dir"])
+        processing_script(sl.session_state["dir"], sl.session_state["out_dir"])
+        if os.path.exists(
+            os.path.join(sl.session_state["out_dir"], final_form["Full_Product_Name"])
+        ):
+            sl.success("✅ Data saved successfully!")
+            with open(LASTFORM_NAME, "r") as file_object:
+                lines = file_object.readlines()
+                for line in range(len(lines)):
+                    if "NFRC" in lines[line]:
+                        lines[line] = f'"NFRC_id": {nfrc + 1},\n'
+
+            with open(LASTFORM_NAME, "w") as file_object:
+                file_object.writelines(lines)
+            sl.rerun()
+        else:
+            sl.error("File Not Saved!")
+else:
+    sl.error("Output Directory Does not Exist!")
+
+sl.markdown("---")
+sl.info(
+    """
+**NOTE:**
+- Manually Edit NFRC in Sidebar
+"""
+)
