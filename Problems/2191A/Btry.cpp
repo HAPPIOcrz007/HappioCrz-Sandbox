@@ -1,4 +1,10 @@
+#include <algorithm>
 #include <bits/stdc++.h>
+#include <climits>
+#include <iostream>
+#include <set>
+#include <system_error>
+#include <vector>
 using namespace std;
 
 #ifdef LOCAL
@@ -6,10 +12,16 @@ using namespace std;
 #include <sys/resource.h>
 #endif
 
-bool problem(){
-    return false;
+int mex(int a, int b) {
+    for (int x = 0; ; x++) {
+        if (x != a && x != b)
+            return x;
+    }
 }
 
+void problem() {
+    cout << mex(0,1) << "\n";
+}
 int main() {
     #ifdef LOCAL
     auto start = chrono::high_resolution_clock::now();
@@ -30,15 +42,15 @@ int main() {
     //
     // --- Contest logic starts here ---
     ios::sync_with_stdio(false);
-    cin.tie(NULL); int t;
+    cin.tie(NULL);
+    int t;
     cin >> t;
-    while(t--){
-        cout << (problem() ? "YES" : "NO") << "\n";
-    }
+    while (t--)
+        problem();
     // --- Contest logic ends here ---
     //---
     // to run
-    // g++ -std=c++23 -O2 -DLOCAL main.cpp -o main
+    // g++ -std=c++17 -O2 -DLOCAL main.cpp -o main
     // ./main < input.txt
     //
     //
