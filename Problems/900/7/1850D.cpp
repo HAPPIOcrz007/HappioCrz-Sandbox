@@ -14,6 +14,25 @@ using i64 = long long;
 #endif
 
 void problem() {
+    i64 n,k;
+    cin >> n >> k;
+    vector <i64> a(n);
+
+    for(i64 i = 0; i < n; i++){
+        cin >> a[i];
+    }
+    sort(a.begin(),a.end());
+    i64 chain = 1, longest_chain = 1;
+    for(i64 i = 1; i < n; i++){
+        if((a[i] - a[i-1]) <= k){
+            chain++;
+        } else {
+            chain = 1;
+        }
+        longest_chain = max(longest_chain, chain);
+    }
+    cout << n - longest_chain << "\n";
+    return;
 }
 int main() {
     #ifdef LOCAL

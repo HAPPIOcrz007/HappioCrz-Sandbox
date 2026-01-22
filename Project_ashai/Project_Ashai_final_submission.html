@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Opticas Batch TXT Generator</title>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.section-box {
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  margin-bottom: 25px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.section-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+}
+.section-header {
+  background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+  color: white;
+  padding: 18px 30px;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-content {
+  padding: 30px;
+}
+
+/* File Upload Section */
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-bottom: 25px;
+}
+.upload-box {
+  border: 2px dashed #00796B;
+  border-radius: 12px;
+  padding: 25px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f8fdfc 0%, #e0f7fa 100%);
+  position: relative;
+  overflow: hidden;
+}
+.upload-box:hover {
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  border-color: #004D40;
+  transform: translateY(-3px);
+}
+.upload-box h3 {
+  margin: 0 0 15px 0;
+  color: #00796B;
+  font-size: 18px;
+}
+.upload-box .file-count {
+  color: #666;
+  font-size: 14px;
+  margin-top: 10px;
+  font-weight: 600;
+}
+.file-input {
+  display: none;
+}
+.file-list {
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  background: white;
+  text-align: left;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+.file-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+  font-family: 'Consolas', monospace;
+  color: #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.file-item:last-child {
+  border-bottom: none;
+}
+.file-item:before {
+  content: "📄";
+  margin-right: 8px;
+}
+
+/* Status indicator */
+.status-indicator {
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  text-align: center;
+  font-weight: 600;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+}
+.status-waiting {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  color: #856404;
+  border-color: #ffc107;
+}
+.status-ready {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #155724;
+  border-color: #28a745;
+}
+
+/* Main Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px 25px;
+  margin-bottom: 25px;
+}
+.form-group {
+  margin-bottom: 5px;
+}
+.form-grid label {
+  font-weight: 600;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  background: white;
+}
+.form-grid input:focus,
+.form-grid select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+.form-note {
+  font-size: 12px;
+  color: #718096;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* Document Range Section */
+.document-range-section {
+  background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%);
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 30px;
+  border: 2px solid #ed8936;
+  display: none;
+}
+.document-range-section.visible {
+  display: block;
+  animation: slideIn 0.5s ease;
+}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.document-range-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.document-range-controls {
+  display: flex;
+  gap: 10px;
+}
+.range-input-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.range-input {
+  flex: 1;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 2px solid #cbd5e0;
+  font-size: 14px;
+  background: white;
+}
+.range-info {
+  font-size: 14px;
+  color: #4a5568;
+  background: #edf2f7;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+.range-info span {
+  font-weight: bold;
+  color: #2d3748;
+}
+
+/* Document Details Panel */
+.document-details {
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  display: none;
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.document-details.visible {
+  display: block;
+}
+.document-metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.document-metadata-grid div {
+  background: #f8fafc;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+.document-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+/* Buttons */
+button {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.generate-btn {
+  margin-top: 30px;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 16px;
+}
+.generate-btn:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+.btn-primary {
+  background: linear-gradient(135deg, #00796B 0%, #004D40 100%);
+  color: white;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #00695C 0%, #003D33 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 121, 107, 0.3);
+}
+.btn-secondary {
+  background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+  color: white;
+}
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #636f83 0%, #3c4658 100%);
+  transform: translateY(-2px);
+}
+.btn-small {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+.btn-success {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  color: white;
+}
+.btn-success:hover {
+  background: linear-gradient(135deg, #2f9e60 0%, #27714a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(56, 161, 105, 0.3);
+}
+
+/* Document Selector */
+#document-selector-container {
+  margin-top: 20px;
+  padding: 15px;
+  background: #ebf8ff;
+  border-radius: 10px;
+  border: 2px solid #bee3f8;
+  display: none;
+}
+#document-selector-container label {
+  font-weight: 600;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 8px;
+}
+#document-selector {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 2px solid #cbd5e0;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .upload-grid {
+    grid-template-columns: 1fr;
+  }
+  .document-metadata-grid {
+    grid-template-columns: 1fr;
+  }
+  .range-input-group {
+    flex-direction: column;
+  }
+  .range-input-group button {
+    width: 100%;
+  }
+}
+
+/* Loading Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+<!-- Include JSZip library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+
+<body>
+<div class="container">
+  <!-- File Upload Section -->
+  <div class="section-box">
+    <div class="section-header">
+      <span>📁</span>
+      <span>File Upload</span>
+    </div>
+    <div class="section-content">
+      <div class="upload-grid">
+        <div class="upload-box" onclick="document.getElementById('trFile').click()">
+          <h3>Transmission Files (.asc)</h3>
+          
+          <div class="file-count" id="tr-count">0 files selected</div>
+          <input type="file" id="trFile" class="file-input" multiple accept=".asc" onchange="handleFileSelect('tr', this.files)">
+          <div id="tr-list" class="file-list" style="display: none;"></div>
+        </div>
+        
+        <div class="upload-box" onclick="document.getElementById('rgFile').click()">
+          <h3>Reflection Glass Files (.asc)</h3>
+          
+          <div class="file-count" id="rg-count">0 files selected</div>
+          <input type="file" id="rgFile" class="file-input" multiple accept=".asc" onchange="handleFileSelect('rg', this.files)">
+          <div id="rg-list" class="file-list" style="display: none;"></div>
+        </div>
+        
+        <div class="upload-box" onclick="document.getElementById('rfFile').click()">
+          <h3>Reflection Film Files (.asc)</h3>
+          
+          <div class="file-count" id="rf-count">0 files selected</div>
+          <input type="file" id="rfFile" class="file-input" multiple accept=".asc" onchange="handleFileSelect('rf', this.files)">
+          <div id="rf-list" class="file-list" style="display: none;"></div>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 20px; align-items: center; margin-top: 25px;">
+        <div>
+          <label style="font-weight: 600; color: #004D40; display: block; margin-bottom: 8px;">
+            How Many Files to Process?
+          </label>
+          <input type="number" id="fileCount" value="1" min="1" style="padding: 12px 15px; border-radius: 10px; border: 2px solid #cbd5e0; width: 120px; font-size: 16px;" onchange="checkFileUploads()">
+        </div>
+        <div style="flex: 1;">
+          <div id="fileStatus" class="status-indicator status-waiting">
+            <span>⚠️</span>
+            <span>Upload files first to enable document configuration</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metadata Configuration Section -->
+  <div class="section-box">
+    <div class="section-header">
+      <span>⚙️</span>
+      <span>Metadata Configuration</span>
+    </div>
+    <div class="section-content">
+      
+      <!-- Document Range Configuration -->
+      <div class="document-range-section" id="document-range-section">
+        <div class="document-range-header">
+          <h3 style="margin: 0; color: #2c3e50;">Document Range Configuration</h3>
+        </div>
+        
+        <div class="range-input-group">
+          <input type="text" id="document-range" class="range-input" 
+                 placeholder="e.g., 1-3, 4, 5-6" 
+                 title="Enter document ranges separated by commas">
+          <button type="button" class="btn-primary btn-small" onclick="parseDocumentRange()">
+            <span>➕</span>
+            <span>Add Range</span>
+          </button>
+          <button type="button" class="btn-secondary btn-small" onclick="clearAllRanges()">
+            <span>🗑️</span>
+            <span>Clear All</span>
+          </button>
+        </div>
+        
+        <div class="range-info" id="range-info">
+          <div>Configured Documents: <span id="document-count">0</span></div>
+          <div style="font-size: 13px; margin-top: 8px; line-height: 1.5;">
+            Files will be processed in order: 1st files → Document 1, 2nd files → Document 2, etc.
+            Each document range can have unique metadata.
+          </div>
+        </div>
+
+        <!-- Document Selector -->
+        <div id="document-selector-container">
+          <label><strong>Select Document to View/Edit:</strong></label>
+          <select id="document-selector" onchange="showDocumentDetails(this.value)">
+            <option value="">-- Select a document --</option>
+            <!-- Document options will be added here -->
+          </select>
+        </div>
+
+        <!-- Document Details -->
+        <div id="document-details" class="document-details">
+          <h4 style="margin: 0 0 20px 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+            <span>📋</span>
+            <span>Document <span id="current-doc-number"></span> Details</span>
+          </h4>
+          
+          <div class="document-metadata-grid" id="document-metadata-display">
+            <!-- Metadata will be displayed here -->
+          </div>
+          
+          <div class="document-actions">
+            <button type="button" class="btn-primary btn-small" onclick="editCurrentDocument()">
+              <span>💾</span>
+              <span>Apply Current Form to This Document</span>
+            </button>
+            <button type="button" class="btn-secondary btn-small" onclick="removeCurrentDocument()">
+              <span>🗑️</span>
+              <span>Remove This Document</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Form -->
+      <div class="form-grid">
+        <!-- Column 1 -->
+        <div class="form-group">
+          <label>Starting NFRC ID</label>
+          <input id="nfrcStart" value="1000">
+        </div>
+        
+        <div class="form-group">
+          <label>Thickness (mm)</label>
+          <input id="thickness" value="6">
+        </div>
+
+        <!-- REMOVED: Product Names (Comma separated) -->
+        <!-- REMOVED: Emissivity Back (Comma separated) -->
+
+        <!-- Column 2 -->
+        <div class="form-group">
+          <label>Base Product Name</label>
+          <input id="productName" value="Solar_Neutral">
+          <div class="form-note">Will be combined with NFRC ID, thickness, and tempering</div>
+        </div>
+
+        <div class="form-group">
+          <label>Emissivity Front</label>
+          <input id="emissivityFront" value="0.837">
+        </div>
+        
+        <div class="form-group">
+          <label>Emissivity Back</label>
+          <input id="emissivityBack" value="0.613">
+        </div>
+        
+        <div class="form-group">
+          <label>Conductivity</label>
+          <input id="conductivity" value="1">
+        </div>
+        
+        <!-- Column 3 -->
+        <div class="form-group">
+          <label>IR Transmittance</label>
+          <input id="irTransmittance" value="0">
+          <div class="form-note">Will output as TIR=value</div>
+        </div>
+        
+        <div class="form-group">
+          <label>Tempering Condition</label>
+          <select id="temperingCondition">
+            <option value="AM" selected>AM</option>
+            <option value="BM">BM</option>
+          </select>
+          <div class="form-note">Added to filename as _AM.txt or _BM.txt</div>
+        </div>
+
+        <div class="form-group">
+          <label>Manufacturer</label>
+          <input id="manufacturer" value="AIS">
+        </div>
+        
+        <!-- Column 4 -->
+        <div class="form-group">
+          <label>Ef_Source</label>
+          <input id="efSource" value="Text File">
+        </div>
+        
+        <div class="form-group">
+          <label>Eb_Source</label>
+          <input id="ebSource" value="Text File">
+        </div>
+        
+        <div class="form-group">
+          <label>IGDB_Checksum</label>
+          <input id="igdbChecksum" value="0">
+        </div>
+
+        <!-- Column 5 -->
+        <div class="form-group">
+          <label>Acceptance</label>
+          <input id="acceptance" value="#">
+        </div>
+        
+        <div class="form-group">
+          <label>Uses</label>
+          <input id="uses" value="">
+        </div>
+        
+        <div class="form-group">
+          <label>Availability</label>
+          <input id="availability" value="">
+        </div>
+        
+        <div class="form-group">
+          <label>Type</label>
+          <select id="type">
+            <option>Monolithic</option>
+            <option selected>Coated</option>
+            <option>Laminated</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Material</label>
+          <select id="material">
+            <option>N/A</option>
+            <option selected>Glass</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Appearance</label>
+          <select id="appearance">
+            <option selected>Neutral</option>
+            <option>Green</option>
+            <option>Grey</option>
+            <option>Blue</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Coated Side</label>
+          <select id="coatedSide">
+            <option>Neither</option>
+            <option>Front</option>
+            <option selected>Back</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Substrate Filename</label>
+          <input id="substrate" value="63485_New_AIS_ClearFloatglass_10012023_6mm_BM.txt">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate Button Section -->
+  <div class="section-box">
+    <div class="section-content">
+      <button type="button" class="generate-btn" onclick="generateTXT()" id="generateButton">
+        <span>⚡</span>
+        <span>Generate & Download ZIP</span>
+      </button>
+      <div style="text-align: center; margin-top: 15px; color: #718096; font-size: 14px;">
+        All files will be packaged into a single ZIP archive
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Global state
+let state = {
+  documentRanges: [], // Array of document configurations
+  totalFiles: 0, // Total number of files to process
+  filesUploaded: false, // Whether files are uploaded
+  defaultMetadata: getDefaultMetadata(),
+  currentDocument: null, // Currently selected document
+  uploadedFiles: {
+    tr: [],
+    rg: [],
+    rf: []
+  },
+  processing: false // To prevent multiple clicks
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  updateFormWithMetadata(state.defaultMetadata);
+});
+
+function getDefaultMetadata() {
+  return {
+    fileCount: '1',
+    nfrcStart: '1000',
+    productName: 'Solar_Neutral',
+    thickness: '6',
+    emissivityFront: '0.837',
+    emissivityBack: '0.613',
+    conductivity: '1',
+    irTransmittance: '0',
+    temperingCondition: 'AM',
+    manufacturer: 'AIS',
+    efSource: 'Text File',
+    ebSource: 'Text File',
+    igdbChecksum: '0',
+    acceptance: '#',
+    uses: '',
+    availability: '',
+    type: 'Coated',
+    material: 'Glass',
+    appearance: 'Neutral',
+    coatedSide: 'Back',
+    substrate: '63485_New_AIS_ClearFloatglass_10012023_6mm_BM.txt'
+  };
+}
+
+// File handling functions
+function handleFileSelect(type, files) {
+  const fileArray = Array.from(files);
+  state.uploadedFiles[type] = fileArray;
+  
+  // Update count display
+  const countElement = document.getElementById(`${type}-count`);
+  const listElement = document.getElementById(`${type}-list`);
+  
+  countElement.textContent = `${fileArray.length} file${fileArray.length !== 1 ? 's' : ''} selected`;
+  countElement.style.color = fileArray.length > 0 ? '#00796B' : '#666';
+  
+  // Update file list
+  if (fileArray.length > 0) {
+    listElement.style.display = 'block';
+    let html = '';
+    fileArray.forEach((file, index) => {
+      const fileSize = (file.size / 1024).toFixed(1);
+      html += `<div class="file-item">
+        <span>${index + 1}. ${file.name}</span>
+        <span style="color: #718096; font-size: 11px;">${fileSize} KB</span>
+      </div>`;
+    });
+    listElement.innerHTML = html;
+  } else {
+    listElement.style.display = 'none';
+  }
+  
+  // Check overall file status
+  checkFileUploads();
+}
+
+// Check if files are uploaded
+function checkFileUploads() {
+  const fileCount = parseInt(document.getElementById('fileCount').value) || 0;
+  const trFiles = state.uploadedFiles.tr.length;
+  const rgFiles = state.uploadedFiles.rg.length;
+  const rfFiles = state.uploadedFiles.rf.length;
+  
+  state.totalFiles = fileCount;
+  
+  if (fileCount > 0 && trFiles >= fileCount && rgFiles >= fileCount && rfFiles >= fileCount) {
+    state.filesUploaded = true;
+    document.getElementById('fileStatus').className = 'status-indicator status-ready';
+    document.getElementById('fileStatus').innerHTML = `<span>✅</span><span>Ready to process ${fileCount} file sets</span>`;
+    
+    // Show document range section
+    document.getElementById('document-range-section').classList.add('visible');
+  } else {
+    state.filesUploaded = false;
+    document.getElementById('fileStatus').className = 'status-indicator status-waiting';
+    
+    let message = '';
+    if (fileCount === 0) {
+      message = 'Enter number of files to process';
+    } else {
+      const missing = [];
+      if (trFiles < fileCount) missing.push(`Transmission (${trFiles}/${fileCount})`);
+      if (rgFiles < fileCount) missing.push(`Reflection Glass (${rgFiles}/${fileCount})`);
+      if (rfFiles < fileCount) missing.push(`Reflection Film (${rfFiles}/${fileCount})`);
+      message = `Upload ${fileCount} files for each: ${missing.join(', ')}`;
+    }
+    
+    document.getElementById('fileStatus').innerHTML = `<span>⚠️</span><span>${message}</span>`;
+    
+    // Hide document range section
+    document.getElementById('document-range-section').classList.remove('visible');
+    document.getElementById('document-details').classList.remove('visible');
+    document.getElementById('document-selector-container').style.display = 'none';
+  }
+}
+
+// Document Range Functions
+function parseDocumentRange() {
+  if (!state.filesUploaded) {
+    alert('Please upload all files first');
+    return;
+  }
+  
+  const rangeInput = document.getElementById('document-range').value.trim();
+  if (!rangeInput) {
+    alert('Please enter a document range');
+    return;
+  }
+  
+  try {
+    const documentNumbers = parseRangeString(rangeInput);
+    
+    if (documentNumbers.length === 0) {
+      alert('No valid documents found in range');
+      return;
+    }
+    
+    // Check if any document number exceeds total files
+    const maxDoc = Math.max(...documentNumbers);
+    if (maxDoc > state.totalFiles) {
+      alert(`Error: Document ${maxDoc} exceeds total file count (${state.totalFiles})`);
+      return;
+    }
+    
+    // Check for duplicates with existing ranges
+    const existingDocs = new Set(state.documentRanges.map(d => d.documentNumber));
+    const duplicates = documentNumbers.filter(num => existingDocs.has(num));
+    
+    if (duplicates.length > 0) {
+      if (!confirm(`Documents ${duplicates.join(', ')} already exist. Overwrite them?`)) {
+        return;
+      }
+      // Remove existing duplicates
+      state.documentRanges = state.documentRanges.filter(doc => !duplicates.includes(doc.documentNumber));
+    }
+    
+    // Create document configurations
+    const newDocuments = documentNumbers.map(docNum => ({
+      documentNumber: docNum,
+      metadata: { ...getCurrentFormMetadata() },
+      active: true
+    }));
+    
+    // Add to existing ranges
+    state.documentRanges.push(...newDocuments);
+    
+    // Sort by document number
+    state.documentRanges.sort((a, b) => a.documentNumber - b.documentNumber);
+    
+    // Clear input
+    document.getElementById('document-range').value = '';
+    
+    // Update UI
+    updateDocumentSelector();
+    updateRangeInfo();
+    
+    alert(`✅ Added ${newDocuments.length} document configuration(s)`);
+    
+  } catch (error) {
+    alert(`❌ Error parsing document range: ${error.message}`);
+  }
+}
+
+function parseRangeString(rangeStr) {
+  const numbers = new Set();
+  const parts = rangeStr.split(',').map(part => part.trim());
+  
+  for (const part of parts) {
+    if (part.includes('-')) {
+      // Handle range like "1-5"
+      const [start, end] = part.split('-').map(num => parseInt(num.trim()));
+      if (isNaN(start) || isNaN(end)) {
+        throw new Error(`Invalid range: ${part}`);
+      }
+      if (start > end) {
+        throw new Error(`Range start cannot be greater than end: ${part}`);
+      }
+      if (start < 1) {
+        throw new Error(`Document numbers must start from 1: ${part}`);
+      }
+      for (let i = start; i <= end; i++) {
+        numbers.add(i);
+      }
+    } else {
+      // Handle single number like "7"
+      const num = parseInt(part);
+      if (isNaN(num)) {
+        throw new Error(`Invalid number: ${part}`);
+      }
+      if (num < 1) {
+        throw new Error(`Document numbers must start from 1: ${part}`);
+      }
+      numbers.add(num);
+    }
+  }
+  
+  return Array.from(numbers).sort((a, b) => a - b);
+}
+
+function updateDocumentSelector() {
+  const selector = document.getElementById('document-selector');
+  
+  // Clear existing options
+  selector.innerHTML = '<option value="">-- Select a document --</option>';
+  
+  // Add document options
+  state.documentRanges.forEach(doc => {
+    const option = document.createElement('option');
+    option.value = doc.documentNumber;
+    option.textContent = `Document ${doc.documentNumber}`;
+    selector.appendChild(option);
+  });
+  
+  // Show/hide selector based on whether we have documents
+  const container = document.getElementById('document-selector-container');
+  container.style.display = state.documentRanges.length > 0 ? 'block' : 'none';
+}
+
+function updateRangeInfo() {
+  const countElement = document.getElementById('document-count');
+  countElement.textContent = state.documentRanges.length;
+  
+  if (state.documentRanges.length > 0) {
+    const docNumbers = state.documentRanges.map(d => d.documentNumber).sort((a, b) => a - b);
+    countElement.innerHTML += ` (${docNumbers.join(', ')})`;
+  }
+}
+
+function showDocumentDetails(docNumber) {
+  if (!docNumber) {
+    document.getElementById('document-details').classList.remove('visible');
+    state.currentDocument = null;
+    return;
+  }
+  
+  const doc = state.documentRanges.find(d => d.documentNumber == docNumber);
+  if (!doc) return;
+  
+  state.currentDocument = doc;
+  
+  // Update display
+  document.getElementById('current-doc-number').textContent = docNumber;
+  
+  const metadataGrid = document.getElementById('document-metadata-display');
+  
+  // Generate product name for display
+  const thickness = parseFloat(doc.metadata.thickness) || 0;
+  const productDisplayName = `${doc.metadata.productName}_${thickness}mm_${doc.metadata.temperingCondition}`;
+  
+  metadataGrid.innerHTML = `
+    <div><strong>File Numbers:</strong> ${doc.documentNumber}</div>
+    <div><strong>Product Name:</strong> ${doc.metadata.productName || 'Not set'}</div>
+    <div><strong>Full Filename:</strong> NFRC_${productDisplayName}.txt</div>
+    <div><strong>Emissivity Front:</strong> ${doc.metadata.emissivityFront || 'Not set'}</div>
+    <div><strong>Emissivity Back:</strong> ${doc.metadata.emissivityBack || 'Not set'}</div>
+    <div><strong>Thickness:</strong> ${doc.metadata.thickness || 'Not set'} mm</div>
+    <div><strong>Conductivity:</strong> ${doc.metadata.conductivity || 'Not set'}</div>
+    <div><strong>IR Transmittance:</strong> ${doc.metadata.irTransmittance || 'Not set'}</div>
+    <div><strong>Tempering Condition:</strong> ${doc.metadata.temperingCondition || 'Not set'}</div>
+    <div><strong>Manufacturer:</strong> ${doc.metadata.manufacturer || 'Not set'}</div>
+    <div><strong>Ef_Source:</strong> ${doc.metadata.efSource || 'Not set'}</div>
+    <div><strong>Eb_Source:</strong> ${doc.metadata.ebSource || 'Not set'}</div>
+    <div><strong>IGDB_Checksum:</strong> ${doc.metadata.igdbChecksum || 'Not set'}</div>
+    <div><strong>Acceptance:</strong> ${doc.metadata.acceptance || 'Not set'}</div>
+    <div><strong>Uses:</strong> ${doc.metadata.uses || 'Not set'}</div>
+    <div><strong>Availability:</strong> ${doc.metadata.availability || 'Not set'}</div>
+    <div><strong>Type:</strong> ${doc.metadata.type || 'Not set'}</div>
+    <div><strong>Appearance:</strong> ${doc.metadata.appearance || 'Not set'}</div>
+    <div><strong>Coated Side:</strong> ${doc.metadata.coatedSide || 'Not set'}</div>
+    <div><strong>Material:</strong> ${doc.metadata.material || 'Not set'}</div>
+    <div><strong>Starting NFRC:</strong> ${doc.metadata.nfrcStart || 'Not set'}</div>
+    <div><strong>Substrate:</strong> ${doc.metadata.substrate || 'Not set'}</div>
+  `;
+  
+  document.getElementById('document-details').classList.add('visible');
+}
+
+function editCurrentDocument() {
+  if (!state.currentDocument) return;
+  
+  // Update the document with current form values
+  state.currentDocument.metadata = { ...getCurrentFormMetadata() };
+  
+  // Refresh display
+  showDocumentDetails(state.currentDocument.documentNumber);
+  
+  alert(`✅ Document ${state.currentDocument.documentNumber} updated with current form values`);
+}
+
+function removeCurrentDocument() {
+  if (!state.currentDocument || !confirm('Remove this document configuration?')) return;
+  
+  const docNumber = state.currentDocument.documentNumber;
+  const index = state.documentRanges.findIndex(d => d.documentNumber == docNumber);
+  
+  if (index !== -1) {
+    state.documentRanges.splice(index, 1);
+    
+    // Update UI
+    updateDocumentSelector();
+    updateRangeInfo();
+    document.getElementById('document-details').classList.remove('visible');
+    document.getElementById('document-selector').value = '';
+    state.currentDocument = null;
+    
+    alert(`🗑️ Document ${docNumber} removed`);
+  }
+}
+
+function clearAllRanges() {
+  if (state.documentRanges.length === 0) return;
+  
+  if (confirm('Clear all document configurations?')) {
+    state.documentRanges = [];
+    
+    // Update UI
+    updateDocumentSelector();
+    updateRangeInfo();
+    document.getElementById('document-details').classList.remove('visible');
+    document.getElementById('document-selector').value = '';
+    state.currentDocument = null;
+    
+    alert('🗑️ All document configurations cleared');
+  }
+}
+
+function updateFormWithMetadata(metadata) {
+  // Update all form fields
+  document.getElementById('fileCount').value = metadata.fileCount || '';
+  document.getElementById('nfrcStart').value = metadata.nfrcStart || '';
+  document.getElementById('productName').value = metadata.productName || '';
+  document.getElementById('thickness').value = metadata.thickness || '';
+  document.getElementById('emissivityFront').value = metadata.emissivityFront || '';
+  document.getElementById('emissivityBack').value = metadata.emissivityBack || '';
+  document.getElementById('conductivity').value = metadata.conductivity || '';
+  document.getElementById('irTransmittance').value = metadata.irTransmittance || '';
+  document.getElementById('temperingCondition').value = metadata.temperingCondition || 'AM';
+  document.getElementById('manufacturer').value = metadata.manufacturer || '';
+  document.getElementById('efSource').value = metadata.efSource || '';
+  document.getElementById('ebSource').value = metadata.ebSource || '';
+  document.getElementById('igdbChecksum').value = metadata.igdbChecksum || '';
+  document.getElementById('acceptance').value = metadata.acceptance || '';
+  document.getElementById('uses').value = metadata.uses || '';
+  document.getElementById('availability').value = metadata.availability || '';
+  document.getElementById('type').value = metadata.type || 'Coated';
+  document.getElementById('material').value = metadata.material || 'Glass';
+  document.getElementById('appearance').value = metadata.appearance || 'Neutral';
+  document.getElementById('coatedSide').value = metadata.coatedSide || 'Back';
+  document.getElementById('substrate').value = metadata.substrate || '';
+}
+
+function getCurrentFormMetadata() {
+  return {
+    fileCount: document.getElementById('fileCount').value,
+    nfrcStart: document.getElementById('nfrcStart').value,
+    productName: document.getElementById('productName').value,
+    thickness: document.getElementById('thickness').value,
+    emissivityFront: document.getElementById('emissivityFront').value,
+    emissivityBack: document.getElementById('emissivityBack').value,
+    conductivity: document.getElementById('conductivity').value,
+    irTransmittance: document.getElementById('irTransmittance').value,
+    temperingCondition: document.getElementById('temperingCondition').value,
+    manufacturer: document.getElementById('manufacturer').value,
+    efSource: document.getElementById('efSource').value,
+    ebSource: document.getElementById('ebSource').value,
+    igdbChecksum: document.getElementById('igdbChecksum').value,
+    acceptance: document.getElementById('acceptance').value,
+    uses: document.getElementById('uses').value,
+    availability: document.getElementById('availability').value,
+    type: document.getElementById('type').value,
+    material: document.getElementById('material').value,
+    appearance: document.getElementById('appearance').value,
+    coatedSide: document.getElementById('coatedSide').value,
+    substrate: document.getElementById('substrate').value
+  };
+}
+
+// Main generation function with ZIP download - FIXED VERSION
+async function generateTXT() {
+  if (state.processing) {
+    alert('⚠️ Processing already in progress...');
+    return;
+  }
+  
+  try {
+    const fileCount = parseInt(document.getElementById('fileCount').value);
+    const trFiles = state.uploadedFiles.tr;
+    const rgFiles = state.uploadedFiles.rg;
+    const rfFiles = state.uploadedFiles.rf;
+
+    if (!fileCount) {
+      alert("❌ Enter how many files to process!");
+      return;
+    }
+
+    if (trFiles.length < fileCount || rgFiles.length < fileCount || rfFiles.length < fileCount) {
+      alert(`❌ Upload at least ${fileCount} files for each type!`);
+      return;
+    }
+
+    state.processing = true;
+    const generateBtn = document.getElementById('generateButton');
+    const originalText = generateBtn.innerHTML;
+    const originalBg = generateBtn.style.background;
+    
+    // Update button to show processing
+    generateBtn.innerHTML = '<span class="spinner"></span><span>Processing...</span>';
+    generateBtn.disabled = true;
+    generateBtn.style.background = '#6c757d';
+    generateBtn.style.cursor = 'wait';
+
+    const nfrcStart = parseInt(document.getElementById('nfrcStart').value || 1000);
+
+    // Helper function to read files
+    const readFile = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    };
+
+    // Helper function to parse ASC content
+    const parseAsc = (content) => {
+      try {
+        return content.split(/\r?\n/)
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('#') && !line.startsWith('{'))
+          .filter(line => /^[\d\.\s\-+eE]+$/.test(line))
+          .map(line => line.split(/\s+/).map(v => Math.abs(parseFloat(v))))
+          .filter(arr => arr.length >= 2 && !isNaN(arr[0]) && !isNaN(arr[1]));
+      } catch (e) {
+        console.error('Error parsing ASC content:', e);
+        return [];
+      }
+    };
+
+    // Create ZIP file
+    const zip = new JSZip();
+    const files = [];
+    
+    // Process each file set
+    for (let i = 0; i < fileCount; i++) {
+      // Update progress in button text
+      generateBtn.innerHTML = `<span class="spinner"></span><span>Processing ${i + 1}/${fileCount}...</span>`;
+      
+      // Allow UI to update
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      try {
+        // Read all three files for this set
+        const [trContent, rgContent, rfContent] = await Promise.all([
+          readFile(trFiles[i]),
+          readFile(rgFiles[i]),
+          readFile(rfFiles[i])
+        ]);
+
+        // Parse the content
+        const trData = parseAsc(trContent);
+        const rgData = parseAsc(rgContent);
+        const rfData = parseAsc(rfContent);
+
+        if (trData.length === 0 || rgData.length === 0 || rfData.length === 0) {
+          throw new Error(`File set ${i + 1}: Invalid or empty ASC data`);
+        }
+
+        // Merge data - ensure all arrays have same length
+        const minLength = Math.min(trData.length, rgData.length, rfData.length);
+        const merged = [];
+        
+        for (let j = 0; j < minLength; j++) {
+          merged.push(
+            `${parseFloat((trData[j][0] / 1000).toFixed(3))}\t` +
+            `${(trData[j][1] / 100).toFixed(8)}\t` +
+            `${(rgData[j][1] / 100).toFixed(8)}\t` +
+            `${(rfData[j][1] / 100).toFixed(8)}`
+          );
+        }
+
+        const mergedText = merged.reverse().join("\n");
+        const nfrcId = nfrcStart + i;
+        const docNumber = i + 1;
+        
+        // Get metadata for this document
+        let metadata = getCurrentFormMetadata();
+        
+        // Check if we have document-specific configuration
+        if (state.documentRanges.length > 0) {
+          const doc = state.documentRanges.find(d => d.documentNumber === docNumber);
+          if (doc) {
+            metadata = doc.metadata;
+          }
+        }
+
+        // Generate product name using formula: nfrcid_productname_thicknessmm_temperingdetail
+        const baseProduct = metadata.productName || 'Product';
+        const thickness = parseFloat(metadata.thickness) || 0;
+        const temperingCondition = metadata.temperingCondition || 'AM';
+        
+        // Format: nfrcid_productname_thicknessmm_temperingdetail
+        const productName = `${nfrcId}_${baseProduct}_${thickness}mm_${temperingCondition}`;
+        const filename = `${productName}.txt`;
+        
+        // For header display
+        const headerProductName = `${nfrcId}_${baseProduct}_${thickness}mm_${temperingCondition}`;
+
+        // Build header with ALL fields
+        const header = `{ Units Wavelength Units } SI Microns
+{ Thickness } ${metadata.thickness}
+{ Conductivity } ${metadata.conductivity}
+{ IR Transmittance } TIR=${metadata.irTransmittance}
+{ Emissivity front back } Emis= ${metadata.emissivityFront} ${metadata.emissivityBack}
+{ }
+{ Ef_Source: ${metadata.efSource} }
+{ Eb_Source: ${metadata.ebSource} }
+{ IGDB_Checksum: ${metadata.igdbChecksum} }
+{ Product Name: ${headerProductName} }
+{ Manufacturer: ${metadata.manufacturer} }
+{ NFRC ID: ${nfrcId} }
+{ Type: ${metadata.type} }
+{ Material: ${metadata.material} }
+{ Coating Name: ${headerProductName} }
+{ Coated Side: ${metadata.coatedSide} }
+{ Substrate Filename: ${metadata.substrate} }
+{ Appearance: ${metadata.appearance.toUpperCase()} }
+{ Acceptance: ${metadata.acceptance} }
+{ Uses: ${metadata.uses} }
+{ Availability: ${metadata.availability} }
+{ Structure: }`;
+
+        const finalText = header + "\n" + mergedText;
+        
+        // Add to ZIP
+        zip.file(filename, finalText);
+        files.push({ 
+          filename, 
+          productName: headerProductName, 
+          nfrcId, 
+          thickness: `${thickness}mm`,
+          temperingCondition 
+        });
+
+      } catch (error) {
+        console.error(`Error processing file set ${i + 1}:`, error);
+        throw new Error(`Error processing file set ${i + 1}: ${error.message}`);
+      }
+    }
+
+    // Update button to show finalizing
+    generateBtn.innerHTML = '<span class="spinner"></span><span>Creating ZIP file...</span>';
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Add a README file with processing info
+    const readmeContent = generateReadmeContent(files);
+    zip.file("README.txt", readmeContent);
+    
+    // Generate ZIP content
+    const zipContent = await zip.generateAsync({ 
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 }
+    });
+    
+    // Create timestamp for filename
+    const now = new Date();
+    const timestamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+    const zipFilename = `opticas_batch_${timestamp}.zip`;
+    
+    // Download the ZIP using FileSaver.js
+    saveAs(zipContent, zipFilename);
+    
+    // Success state
+    generateBtn.innerHTML = '<span>✅</span><span>Download Complete!</span>';
+    generateBtn.style.background = '#28a745';
+    
+    // Show success message
+    setTimeout(() => {
+      alert(`✅ Success! Generated ${files.length} files in ${zipFilename}`);
+      
+      // Reset button after delay
+      setTimeout(() => {
+        generateBtn.innerHTML = originalText;
+        generateBtn.disabled = false;
+        generateBtn.style.background = originalBg;
+        generateBtn.style.cursor = 'pointer';
+        state.processing = false;
+      }, 2000);
+    }, 500);
+    
+  } catch (err) {
+    console.error('Generation error:', err);
+    alert(`❌ Error: ${err.message}`);
+    
+    // Reset button on error
+    const generateBtn = document.getElementById('generateButton');
+    generateBtn.innerHTML = '<span>⚡</span><span>Generate & Download ZIP</span>';
+    generateBtn.disabled = false;
+    generateBtn.style.background = '';
+    generateBtn.style.cursor = 'pointer';
+    state.processing = false;
+  }
+}
+// Function to generate README content
+function generateReadmeContent(files) {
+  const fileCount = files.length;
+  const nfrcStart = parseInt(document.getElementById('nfrcStart').value || 1000);
+  const nfrcEnd = nfrcStart + fileCount - 1;
+  const metadata = getCurrentFormMetadata();
+  
+  let docInfo = '';
+  if (state.documentRanges.length > 0) {
+    docInfo = '\n\nDOCUMENT CONFIGURATION:\n' + '='.repeat(50) + '\n';
+    state.documentRanges.forEach(doc => {
+      docInfo += `Document ${doc.documentNumber}:\n`;
+      docInfo += `  Product Name: ${doc.metadata.productName}\n`;
+      docInfo += `  Thickness: ${doc.metadata.thickness} mm\n`;
+      docInfo += `  Emissivity Front: ${doc.metadata.emissivityFront}\n`;
+      docInfo += `  Emissivity Back: ${doc.metadata.emissivityBack}\n`;
+      docInfo += `  Appearance: ${doc.metadata.appearance}\n`;
+      docInfo += `  Tempering: ${doc.metadata.temperingCondition}\n\n`;
+    });
+  }
+  
+  return `OPTICAS BATCH PROCESSING REPORT
+${'='.repeat(50)}
+
+Generated: ${new Date().toLocaleString()}
+Total Files: ${fileCount}
+NFRC ID Range: ${nfrcStart} - ${nfrcEnd}
+
+FILE NAMING FORMAT:
+${'-'.repeat(30)}
+NFRCID_ProductName_Thicknessmm_TemperingCondition.txt
+Example: 1000_Solar_Neutral_6mm_AM.txt
+
+GENERATED FILES:
+${'-'.repeat(30)}
+${files.map(f => f.filename).join('\n')}
+
+PROCESSING PARAMETERS:
+${'-'.repeat(30)}
+• Wavelength Units: SI Microns
+• Data Format: Column 1 (wavelength/1000), Columns 2-4 (data/100)
+• Output Order: Reversed (2500→250 → 250→2500)
+• File Naming: NFRCID_ProductName_Thicknessmm_TemperingCondition.txt
+${docInfo}
+METADATA FIELDS INCLUDED:
+${'-'.repeat(30)}
+• Product Name: ${metadata.productName}
+• Thickness: ${metadata.thickness} mm
+• Emissivity Front: ${metadata.emissivityFront}
+• Emissivity Back: ${metadata.emissivityBack}
+• Conductivity: ${metadata.conductivity}
+• IR Transmittance: ${metadata.irTransmittance}
+• Type: ${metadata.type}
+• Material: ${metadata.material}
+• Appearance: ${metadata.appearance}
+• Coated Side: ${metadata.coatedSide}
+• Substrate Filename: ${metadata.substrate}
+• Manufacturer: ${metadata.manufacturer}
+• Ef_Source: ${metadata.efSource}
+• Eb_Source: ${metadata.ebSource}
+• IGDB_Checksum: ${metadata.igdbChecksum}
+• Acceptance: ${metadata.acceptance}
+• Uses: ${metadata.uses}
+• Availability: ${metadata.availability}
+• Tempering Condition: ${metadata.temperingCondition}
+
+NOTES:
+${'-'.repeat(30)}
+1. All spectral data filtered to valid numeric values only
+2. ASC files parsed from #DATA section onwards
+3. Column separation using tab characters
+4. All values formatted to 6 decimal places
+5. File order preserved as uploaded
+
+--- END OF REPORT ---`;
+}
+</script>
+</body>
+</html>

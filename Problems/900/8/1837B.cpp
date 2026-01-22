@@ -14,7 +14,24 @@ using i64 = long long;
 #endif
 
 void problem() {
+    i64 n;
+    cin >> n;
+    string s;
+    cin >> s;
+
+    i64 longest_run = 1, current_run = 1;
+    for (int i = 1; i < n; i++) {
+        if (s[i] == s[i-1]) {
+            current_run++;
+        } else {
+            current_run = 1;
+        }
+        longest_run = max(longest_run, current_run);
+    }
+    cout << longest_run + 1 << "\n";
+    return;
 }
+
 int main() {
     #ifdef LOCAL
     auto start = chrono::high_resolution_clock::now();

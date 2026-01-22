@@ -1,25 +1,25 @@
-{ Units Wavelength Units } SI Microns			
-{ Thickness } 6			
-{ Conductivity } 1			
-{ IR Transmittance } TIR=0			
-{ Emissivity front back } Emis= 0.837 0.613			
-{ }			
-{ Ef_Source: Text File }			
-{ Eb_Source: Text File }			
-{ IGDB_Checksum: 0 }			
-{ Product Name: 63486_Solar Series Neutral 34_6mm_AM }			
-{ Manufacturer: AIS }			
-{ NFRC ID: 63486 }			
-{ Type: Coated }			
-{ Material: N/A }			
-{ Coating Name: 63486_Solar Series Neutral 34_6mm_AM }			
-{ Coated Side: Back }			
-{ Substrate Filename: 63485_New_AIS_ClearFloatglass_10012023_6mm_BM.txt }			
-{ Appearance: NEUTRAL }			
-{ Acceptance: # }			
-{ Uses:  }			
-{ Availability:   }			
-{ Structure:  }			
+{ Units Wavelength Units } SI Microns
+{ Thickness } 6
+{ Conductivity } 1
+{ IR Transmittance } TIR=0
+{ Emissivity front back } Emis= 0.837 0.613
+{ }
+{ Ef_Source: Text File }
+{ Eb_Source: Text File }
+{ IGDB_Checksum: 0 }
+{ Product Name: 63486_Solar Series Neutral 34_6mm_AM }
+{ Manufacturer: AIS }
+{ NFRC ID: 63486 }
+{ Type: Coated }
+{ Material: N/A }
+{ Coating Name: 63486_Solar Series Neutral 34_6mm_AM }
+{ Coated Side: Back }
+{ Substrate Filename: 63485_New_AIS_ClearFloatglass_10012023_6mm_BM.txt }
+{ Appearance: NEUTRAL }
+{ Acceptance: # }
+{ Uses:  }
+{ Availability:   }
+{ Structure:  }
 0.32	0.02341084	0.06061582	0.18613451
 0.325	0.06559305	0.05740788	0.17890691
 0.33	0.16603968	0.06121577	0.16547898
