@@ -1,3 +1,9 @@
+// batch_order_maker.cpp
+/**
+ * this code reads the file in <constexpr const char* COMMANDS_DIR        = "data_holders/commands/"; >
+ * and calls in the while function the order maker
+ * to make the orders depending on the stuff from the file
+ */
 #include "./core_structure.h"
 #include <iostream>
 #include <fstream>

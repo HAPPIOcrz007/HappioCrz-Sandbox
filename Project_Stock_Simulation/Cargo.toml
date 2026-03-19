@@ -1,0 +1,14 @@
+[package]
+name = "stock_simulation"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[[bin]]
+name = "batch_order_maker"
+path = "src/processers/batch_order_maker.rs"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"

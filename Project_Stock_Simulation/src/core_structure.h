@@ -202,5 +202,4 @@ STATIC_ASSERT(sizeof(Match) == 16, "Match must be 16 bytes");
 STATIC_ASSERT(alignof(Order) <= 8, "Order alignment too large");
 STATIC_ASSERT(alignof(StockState) <= 8, "StockState alignment too large");
 
-
 #endif
